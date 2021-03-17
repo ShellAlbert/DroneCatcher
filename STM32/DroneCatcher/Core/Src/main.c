@@ -776,24 +776,49 @@ void uartCmdParse(uint8_t *cmd,uint8_t cmdLen)
 {
 	//return directly to verify if received successfully.
 	HAL_UART_Transmit(&huart1,cmd,cmdLen,200);
-	//Sync1 Sync2 Cmd DataLen Data   CRC32
-	//5A    A5    01  01      XX     XX XX XX XX
-//	if(cmdLen<9)
-//	{
-//		return;
-//	}
-
-	//GetBack.
-	//top arm driven with pwm.
-	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,2);// CCR/ARR=2/4=50%.
-	//bottom arm driven with 0,always on.
-	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,0);// CCR/ARR=0/4=0%.
-	//ShutDown: enable(0),disable(1).
-	HAL_GPIO_WritePin(GPIOG, MOTOR1_SD_Pin, GPIO_PIN_SET);
-	HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
-	//start timer17 to timeout to stop pwm.
-	HAL_TIM_Base_Start_IT(&htim17);
+	//Sync1 Sync2  Command   DataLen      Data           CRC32
+	//5A     A5      01        01      XX XX XX XX     XX XX XX XX
+	//Command:01,motor rotate control.
+	//Data:00 00 00 01,move clockwise.
+	//Data:00 00 00 02,move anti-clockwise.
+	if(cmdLen<12)
+	{
+		return;
+	}else if(cmd[0]!=0x5A || cmd[1]!=0xA5)
+	{
+		return;
+	}
+	switch(cmd[2])
+	{
+	case 0x01:
+		if(cmd[3]==0x01 && cmd[4]==0x00 && cmd[5]==0x00 && cmd[6]==0x00 &&cmd[7]==0x01)
+		{
+			//GetBack.
+			//top arm driven with pwm.
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,2);// CCR/ARR=2/4=50%.
+			//bottom arm driven with 0,always on.
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,0);// CCR/ARR=0/4=0%.
+			//ShutDown: enable(1),disable(0).
+			HAL_GPIO_WritePin(GPIOG, MOTOR1_SD_Pin, GPIO_PIN_SET);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
+			//start timer17 to timeout to stop pwm.
+			HAL_TIM_Base_Start_IT(&htim17);
+		}else if(cmd[3]==0x01 && cmd[4]==0x00 && cmd[5]==0x00 && cmd[6]==0x00 &&cmd[7]==0x02)
+		{
+			//ThrowOut.
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_1,0);// CCR/ARR=0/4=0%.
+			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_2,2);// CCR/ARR=2/4=50%.
+			//ShutDown: enable(1),disable(0).
+			HAL_GPIO_WritePin(GPIOG, MOTOR1_SD_Pin, GPIO_PIN_SET);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
+			//start timer17 to timeout to stop pwm.
+			HAL_TIM_Base_Start_IT(&htim17);
+		}
+	default:
+		break;
+	}
 }
 /* USER CODE END 4 */
 
@@ -865,17 +890,17 @@ void commTaskEntry(void *argument)
 		//iEncoder=__HAL_TIM_GET_COUNTER(&htim3);
 		//sprintf((char*)iBuffer,"%d\r\n",iEncoder);
 		//HAL_UART_Transmit(&huart1,iBuffer,strlen((char*)iBuffer),200);
-		iBuffer[0]=0x5a;
-		iBuffer[1]=0xa5;
-		iBuffer[2]=0x01;
-		iBuffer[3]=0x02;
-		iBuffer[4]=0x03;
-		iBuffer[5]=0x04;
-		iBuffer[6]=0x05;
-		iBuffer[7]=0x06;
-		iCrc32=HAL_CRC_Calculate(&hcrc,(uint32_t*)iBuffer,2);
-		sprintf((char*)iBuffer,"crc32=%x\r\n",(unsigned int)iCrc32);
-		HAL_UART_Transmit(&huart1,iBuffer,strlen((char*)iBuffer),200);
+//		iBuffer[0]=0x5a;
+//		iBuffer[1]=0xa5;
+//		iBuffer[2]=0x01;
+//		iBuffer[3]=0x02;
+//		iBuffer[4]=0x03;
+//		iBuffer[5]=0x04;
+//		iBuffer[6]=0x05;
+//		iBuffer[7]=0x06;
+//		iCrc32=HAL_CRC_Calculate(&hcrc,(uint32_t*)iBuffer,2);
+//		sprintf((char*)iBuffer,"crc32=%x\r\n",(unsigned int)iCrc32);
+//		HAL_UART_Transmit(&huart1,iBuffer,strlen((char*)iBuffer),200);
 	}
   /* USER CODE END commTaskEntry */
 }
