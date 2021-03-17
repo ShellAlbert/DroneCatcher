@@ -808,6 +808,15 @@ void uartCmdParse(uint8_t *cmd,uint8_t cmdLen)
 	}
 	switch(cmd[2])
 	{
+	case 0x00://stop motor immediately.
+		if(cmd[3]==0x04 && cmd[4]==0x00 && cmd[5]==0x00 && cmd[6]==0x00 &&cmd[7]==0x00)
+		{
+			//ShutDown: enable(1),disable(0).
+			HAL_GPIO_WritePin(GPIOG, MOTOR1_SD_Pin, GPIO_PIN_RESET);
+			//stop TIM17.
+			HAL_TIM_Base_Stop_IT(&htim17);
+		}
+		break;
 	case 0x01:
 		if(cmd[3]==0x04 && cmd[4]==0x00 && cmd[5]==0x00 && cmd[6]==0x00 &&cmd[7]==0x01)
 		{
