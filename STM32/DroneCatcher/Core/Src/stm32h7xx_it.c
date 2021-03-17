@@ -52,10 +52,10 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-extern TIM_HandleTypeDef htim1;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim17;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
@@ -193,6 +193,20 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream2 global interrupt.
+  */
+void DMA1_Stream2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -243,21 +257,7 @@ void TIM17_IRQHandler(void)
   /* USER CODE END TIM17_IRQn 0 */
   HAL_TIM_IRQHandler(&htim17);
   /* USER CODE BEGIN TIM17_IRQn 1 */
-	//HTIM17
-	//72MHz/(2000-1+1)=36000Hz
-	//36000Hz/(18000-1+1)=2Hz
-	//AutoReloadPreloadDisable
-	if(1/*timer17Counter++>2*/)
-	{
-		timer17Counter=0;
-		//ShutDown: enable(0),disable(1).
-		HAL_GPIO_WritePin(GPIOG, MOTOR1_SD_Pin, GPIO_PIN_RESET);
-		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
-		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_2);
 
-		//stop TIM17.
-		HAL_TIM_Base_Stop_IT(&htim17);
-	}
   /* USER CODE END TIM17_IRQn 1 */
 }
 

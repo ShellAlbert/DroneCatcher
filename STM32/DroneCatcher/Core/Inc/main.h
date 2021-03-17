@@ -40,7 +40,6 @@ extern "C" {
 extern uint8_t uartRxBuffer[64];
 extern uint8_t uartRxLen;
 extern uint8_t uartRxFinished;
-extern uint8_t timer17Counter;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -63,7 +62,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define ManualMoveTimer 1
 #define LED2_Pin GPIO_PIN_2
 #define LED2_GPIO_Port GPIOE
 #define LED1_Pin GPIO_PIN_15
