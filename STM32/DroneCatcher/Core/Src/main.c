@@ -185,7 +185,7 @@ void motor_off()
 uint8_t uartRxBuffer[64];
 uint8_t uartRxLen=0;
 uint8_t uartRxFinished=0;
-//ADC1-CH3:current
+//ADC1-CH5:current
 //ADC1-CH9:voltage.
 //channel_count=2,DMA buffer size=32.
 #define CHANNEL_NUM	2
@@ -945,6 +945,27 @@ void StartDefaultTask(void *argument)
 #if 1
 		char txBuffer[48];
 		uint16_t iEncoder=__HAL_TIM_GET_COUNTER(&htim3);
+		//current0,voltage0,current1,voltage1, ... ...
+		//do average value filter.
+		int iCurMax=0,iCurMin=0x7fffffff,iCurTotal=0,iCurAvg;
+		for(int i=0;i<100;i++)
+		{
+			if((int)adc1_buffer[i*2]>iCurMax)
+			{
+				iCurMax=(int)adc1_buffer[i*2];
+			}
+			if((int)adc1_buffer[i*2]<iCurMin)
+			{
+				iCurMin=(int)adc1_buffer[i*2];
+			}
+			iCurTotal+=(int)adc1_buffer[i*2];
+			sprintf(txBuffer,"%d-I:%d,E:%d\r\n",i*2,(int)adc1_buffer[i*2],iEncoder);
+			HAL_UART_Transmit(&huart1,(uint8_t*)txBuffer,strlen(txBuffer),200);
+		}
+		iCurAvg=(iCurTotal-iCurMax-iCurMin)/(100-2);
+		sprintf(txBuffer,"I:%dMax,%dMin,%dAvg,E:%d\r\n",iCurMax,iCurMin,iCurAvg,iEncoder);
+		HAL_UART_Transmit(&huart1,(uint8_t*)txBuffer,strlen(txBuffer),200);
+#if 0
 		int real_cur=(int)adc1_buffer[2]-25600;
 		if(real_cur<0)
 		{
@@ -952,19 +973,20 @@ void StartDefaultTask(void *argument)
 		}
 		sprintf(txBuffer,"%dV,%dA,%d\r\n",(int)adc1_buffer[1],real_cur,iEncoder);
 		HAL_UART_Transmit(&huart1,(uint8_t*)txBuffer,strlen(txBuffer),200);
-		if(gRotateDir==Dir_GetBack && real_cur>600)
+		if(gRotateDir==Dir_GetBack && real_cur>400)
 		{
 			//stop DMA before reverse rotate to avoid big start current.
 			HAL_ADC_Stop_DMA(&hadc1);
 			motor_on_always(Dir_ThrowOut);
 			osDelay(5000);
 			//start DMA again.
-			memset(adc1_buffer,0,sizeof(adc1_buffer));
-			HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buffer, CHANNEL_NUM*EACH_CHANNEL_SIZE);
 			motor_on_always(Dir_GetBack);
+			osDelay(500);//delay to skip reverse big current.
+			memset(adc1_buffer,0,CHANNEL_NUM*EACH_CHANNEL_SIZE*sizeof(uint32_t));
+			HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc1_buffer, CHANNEL_NUM*EACH_CHANNEL_SIZE);
 		}
 #endif
-
+#endif
 		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
 		osDelay(200);
 	}
