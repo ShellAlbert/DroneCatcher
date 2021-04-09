@@ -52,6 +52,7 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+extern uint8_t uart3RxBuffer[9];
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -60,6 +61,7 @@ extern TIM_HandleTypeDef htim17;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN EV */
@@ -231,6 +233,20 @@ void USART1_IRQHandler(void)
 		}
 	}
   /* USER CODE END USART1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART3 global interrupt.
+  */
+void USART3_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART3_IRQn 0 */
+
+  /* USER CODE END USART3_IRQn 0 */
+  HAL_UART_IRQHandler(&huart3);
+  /* USER CODE BEGIN USART3_IRQn 1 */
+  HAL_UART_Receive_IT(&huart3,uart3RxBuffer,sizeof(uart3RxBuffer));
+  /* USER CODE END USART3_IRQn 1 */
 }
 
 /**
